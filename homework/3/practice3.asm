@@ -1,36 +1,43 @@
-; practice3.asm
-; I/O: int 80h
-; blocks: I/O, parse, math/logic, loops, memory
-
 BITS 32
 GLOBAL _start
 
-SECTION .data
-prompt db "practice3: see README.md", 10
-prompt_len equ $-prompt
-
 SECTION .bss
-buf resb 256
+outbuf resb 16
 
 SECTION .text
 _start:
-    ; I/O: write prompt
-    mov eax, 4          ; sys_write
-    mov ebx, 1          ; stdout
-    mov ecx, prompt
-    mov edx, prompt_len
+    mov eax, 55555
+
+.convert:
+    mov edi, outbuf + 15  ;вказівник в кінець буфера
+    mov byte [edi], 10   ;\n кінець
+    dec edi              ;зсунути назад
+
+    mov ebx, 10  ;дільник
+
+.convert_loop:
+    xor edx, edx
+    div ebx     ;ділення (EDX:EAX / EBX, EAX - ціле, EDX - остача)
+
+    add dl, '0'    ;в ASCII
+    mov [edi], dl  ;в буфер
+    dec edi        ;зсунути
+
+    test eax, eax
+    jnz .convert_loop   ;якщо ZF = 0 (є остача) то повторити
+
+    inc edi        ;піля закінч позиція перед першим сим, перемістити до першого
+    mov ecx, edi   ;передати адрес строки в ecx
+
+    mov edx, outbuf + 16
+    sub edx, edi     ;кількість байт в edx
+
+    mov eax, 4
+    mov ebx, 1
     int 0x80
 
-    ; I/O: read line (optional in skeleton)
-    mov eax, 3          ; sys_read
-    mov ebx, 0          ; stdin
-    mov ecx, buf
-    mov edx, 255
-    int 0x80
 
-    ; logic: TODO implement task logic according to README.md
-
-    ; exit
-    mov eax, 1          ; sys_exit
+.exit:
+    mov eax, 1
     xor ebx, ebx
     int 0x80
